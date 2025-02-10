@@ -13,6 +13,9 @@ DB_PARAMS = {
     "port": "5432",
 }
 
+# ----------------- Définir la configuration de la page -----------------
+st.set_page_config(page_title="🍽️ Application de Recettes", page_icon="🍲", layout="wide")
+
 # ----------------- Initialisation de la Base de Données -----------------
 async def init_db():
     """Initialise la base de données et crée la table newsletter si elle n'existe pas"""
@@ -67,7 +70,7 @@ def get_recipes_by_ingredient(ingredient):
     return response.json().get("meals", [])
 
 def get_recipes_by_category(category):
-    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}"
+    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}")
     response = requests.get(url)
     return response.json().get("meals", [])
 
@@ -82,7 +85,6 @@ def get_recipe_details(meal_id):
     return response.json().get("meals", [])[0]
 
 # ----------------- Interface Utilisateur Streamlit -----------------
-st.set_page_config(page_title="🍽️ Application de Recettes", page_icon="🍲", layout="wide")
 
 st.title("🍽️ Application de Recettes")
 
