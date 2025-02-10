@@ -1,11 +1,12 @@
 import streamlit as st
-import psycopg2
+import asyncpg
 import requests
 import pandas as pd
+import asyncio
 
 # ----------------- Configuration PostgreSQL -----------------
 DB_PARAMS = {
-    "dbname": "projet3",
+    "database": "projet3",
     "user": "hostautop",
     "password": "u3loBO7Xbr4Vdtq3SlskjBlYU6dZDxwY",
     "host": "dpg-cuj1701u0jms73d85d90-a.frankfurt-postgres.render.com",
@@ -13,12 +14,11 @@ DB_PARAMS = {
 }
 
 # ----------------- Initialisation de la Base de Données -----------------
-def init_db():
+async def init_db():
     """Initialise la base de données et crée la table newsletter si elle n'existe pas"""
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
-        cur = conn.cursor()
-        cur.execute("""
+        conn = await asyncpg.connect(**DB_PARAMS)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS newsletter (
                 id SERIAL PRIMARY KEY,
                 nom VARCHAR(100) NOT NULL,
@@ -26,41 +26,36 @@ def init_db():
                 email VARCHAR(255) UNIQUE NOT NULL
             )
         """)
-        conn.commit()
-        cur.close()
-        conn.close()
+        await conn.close()
         st.success("Base de données connectée et table initialisée ✅")
     except Exception as e:
         st.error(f"Erreur de connexion à la base : {e}")
 
-init_db()  # Vérification que la table existe
+asyncio.run(init_db())  # Vérification que la table existe
 
 # ----------------- Inscription à la Newsletter -----------------
-def register_user(nom, prenom, email):
+async def register_user(nom, prenom, email):
     """Ajoute un utilisateur à la base PostgreSQL s'il n'existe pas encore"""
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM newsletter WHERE email = %s", (email,))
-        if cur.fetchone():
+        conn = await asyncpg.connect(**DB_PARAMS)
+        user = await conn.fetchrow("SELECT * FROM newsletter WHERE email = $1", email)
+        if user:
             st.warning("⚠️ Cet email est déjà inscrit.")
         else:
-            cur.execute("INSERT INTO newsletter (nom, prenom, email) VALUES (%s, %s, %s)", (nom, prenom, email))
-            conn.commit()
+            await conn.execute("INSERT INTO newsletter (nom, prenom, email) VALUES ($1, $2, $3)", nom, prenom, email)
             st.success("✅ Inscription réussie !")
-        cur.close()
-        conn.close()
+        await conn.close()
     except Exception as e:
         st.error(f"Erreur d'inscription : {e}")
 
 # ----------------- Récupération des Utilisateurs -----------------
-def get_users():
+async def get_users():
     """Récupère tous les utilisateurs inscrits"""
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
-        df = pd.read_sql("SELECT id, nom, prenom, email FROM newsletter ORDER BY id DESC", conn)
-        conn.close()
-        return df
+        conn = await asyncpg.connect(**DB_PARAMS)
+        users = await conn.fetch("SELECT id, nom, prenom, email FROM newsletter ORDER BY id DESC")
+        await conn.close()
+        return pd.DataFrame(users)
     except Exception as e:
         st.error(f"Erreur de récupération des utilisateurs : {e}")
         return pd.DataFrame()
@@ -99,7 +94,7 @@ with st.sidebar:
     email = st.text_input("Email")
     if st.button("S'inscrire"):
         if nom and prenom and email:
-            register_user(nom, prenom, email)
+            asyncio.run(register_user(nom, prenom, email))
         else:
             st.warning("⚠️ Veuillez remplir tous les champs.")
 
@@ -156,9 +151,10 @@ with tab3:
 # 📋 Liste des Inscrits
 with tab4:
     st.header("📋 Liste des Inscrits")
-    users_df = get_users()
+    users_df = asyncio.run(get_users())
     if not users_df.empty:
         st.dataframe(users_df, hide_index=True, use_container_width=True)
     else:
         st.info("Aucun utilisateur inscrit.")
+
 
