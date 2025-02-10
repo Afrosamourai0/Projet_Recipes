@@ -70,7 +70,7 @@ def get_recipes_by_ingredient(ingredient):
     return response.json().get("meals", [])
 
 def get_recipes_by_category(category):
-    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}")
+    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}"
     response = requests.get(url)
     return response.json().get("meals", [])
 
