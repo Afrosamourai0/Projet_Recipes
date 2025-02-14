@@ -101,7 +101,7 @@ with st.sidebar:
             st.warning("⚠️ Veuillez remplir tous les champs.")
 
 # 📌 Onglets pour les fonctionnalités
-tab1, tab2, tab3, tab4 = st.tabs(["🔎 Recherche par Ingrédient", "🎲 Recette Aléatoire", "📂 Recherche par Catégorie", "📋 Liste des Inscrits"])
+tab1, tab2, tab3, tab4 = st.tabs(["🔎 Recherche par Ingrédient", "🎲 Recette Aléatoire", "📂 Recherche par Catégorie", "📊 Informations"])
 
 # 🔎 Recherche par Ingrédient
 with tab1:
@@ -150,13 +150,11 @@ with tab3:
         else:
             st.warning("Aucune recette trouvée.")
 
-# 📋 Liste des Inscrits
+# 📊 Power BI - Avec iframe
 with tab4:
-    st.header("📋 Liste des Inscrits")
-    users_df = asyncio.run(get_users())
-    if not users_df.empty:
-        st.dataframe(users_df, hide_index=True, use_container_width=True)
-    else:
-        st.info("Aucun utilisateur inscrit.")
+    st.header("📊 Rapport d'informations sur notre contenu")
+    st.markdown("""
+        <iframe width="800" height="600" src="https://app.powerbi.com/view?r=eyJrIjoiOTFkYmJmZDUtMDA3OC00MWVjLWIyNzktYWQ1ZDRiMDA4MzZjIiwidCI6IjM3NmIxOTc2LTQxZmEtNDc4OC05NWIzLWFmZGY3MDFlNzkyNyJ9" frameborder="0" allowFullScreen="true"></iframe>
+    """, unsafe_allow_html=True)
 
 
