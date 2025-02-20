@@ -200,7 +200,7 @@ with tab5:
     st.write("Visualisez les statistiques et analyses sur les recettes.")
 
     # URL de ton rapport Power BI (remplace par ton lien)
-    power_bi_url = "https://app.powerbi.com/view?r=TON_LIEN_ICI"
+    power_bi_url = "https://app.powerbi.com/view?r=eyJrIjoiOTFkYmJmZDUtMDA3OC00MWVjLWIyNzktYWQ1ZDRiMDA4MzZjIiwidCI6IjM3NmIxOTc2LTQxZmEtNDc4OC05NWIzLWFmZGY3MDFlNzkyNyJ9"
 
     # Intégration via un iframe
     st.markdown(f"""
