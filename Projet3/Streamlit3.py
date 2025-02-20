@@ -80,8 +80,8 @@ def get_recipes_by_category(category):
 # ----------------- Page d'Accueil Dynamique -----------------
 def display_home_page():
     # En-tête d'introduction
-    st.markdown("<h1 style='text-align: center; color: #F39C12;'>Bienvenue dans l'application Popotterecettes 🥗</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center;'>Mettez dans la couleur et de l'équilbre dans vos recettes ⭐ !</h2>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #F39C12;'>Bienvenue dans l'application Popottexpress 🥗</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Mettez de la couleur et de l'équilibre dans vos recettes ⭐ !</h2>", unsafe_allow_html=True)
 
     # Image de fond de la page d'accueil
     st.image("https://wallpapers.com/images/featured/1pf6px6ryqfjtnyr.jpg", use_container_width=True)
