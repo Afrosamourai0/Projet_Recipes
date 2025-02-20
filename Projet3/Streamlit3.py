@@ -16,7 +16,7 @@ DB_PARAMS = {
 }
 
 # ----------------- Définir la configuration de la page -----------------
-st.set_page_config(page_title="🍽️ Application de Recettes", page_icon="🍲", layout="wide")
+st.set_page_config(page_title="🍽️ Popottexpress", page_icon="🍲", layout="wide")
 
 # ----------------- Initialisation de la Base de Données -----------------
 async def init_db():
