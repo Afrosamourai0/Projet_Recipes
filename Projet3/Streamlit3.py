@@ -1,8 +1,10 @@
 import streamlit as st
-import asyncpg
 import requests
-import pandas as pd
+import random
 import asyncio
+import asyncpg
+import pandas as pd
+from PIL import Image
 
 # ----------------- Configuration PostgreSQL -----------------
 DB_PARAMS = {
@@ -14,7 +16,7 @@ DB_PARAMS = {
 }
 
 # ----------------- Définir la configuration de la page -----------------
-st.set_page_config(page_title="🍽️ Popotrecettes Application de Recettes pour les nullos", page_icon="🍲", layout="wide")
+st.set_page_config(page_title="🍽️ Application de Recettes", page_icon="🍲", layout="wide")
 
 # ----------------- Initialisation de la Base de Données -----------------
 async def init_db():
@@ -34,7 +36,10 @@ async def init_db():
     except Exception as e:
         st.error(f"Erreur de connexion à la base : {e}")
 
-asyncio.run(init_db())  # Vérification que la table existe
+# Run the database initialization once when the app starts
+if 'db_initialized' not in st.session_state:
+    asyncio.run(init_db())
+    st.session_state['db_initialized'] = True
 
 # ----------------- Inscription à la Newsletter -----------------
 async def register_user(nom, prenom, email):
@@ -51,29 +56,7 @@ async def register_user(nom, prenom, email):
     except Exception as e:
         st.error(f"Erreur d'inscription : {e}")
 
-# ----------------- Récupération des Utilisateurs -----------------
-async def get_users():
-    """Récupère tous les utilisateurs inscrits"""
-    try:
-        conn = await asyncpg.connect(**DB_PARAMS)
-        users = await conn.fetch("SELECT id, nom, prenom, email FROM newsletter ORDER BY id DESC")
-        await conn.close()
-        return pd.DataFrame(users)
-    except Exception as e:
-        st.error(f"Erreur de récupération des utilisateurs : {e}")
-        return pd.DataFrame()
-
-# ----------------- Fonction pour Récupérer les Recettes -----------------
-def get_recipes_by_ingredient(ingredient):
-    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient}"
-    response = requests.get(url)
-    return response.json().get("meals", [])
-
-def get_recipes_by_category(category):
-    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}"
-    response = requests.get(url)
-    return response.json().get("meals", [])
-
+# ----------------- Récupération des Recettes -----------------
 def get_random_recipe():
     url = "https://www.themealdb.com/api/json/v1/1/random.php"
     response = requests.get(url)
@@ -84,27 +67,85 @@ def get_recipe_details(meal_id):
     response = requests.get(url)
     return response.json().get("meals", [])[0]
 
+def get_recipes_by_ingredient(ingredient):
+    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient}"
+    response = requests.get(url)
+    return response.json().get("meals", [])
+
+def get_recipes_by_category(category):
+    url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category}"
+    response = requests.get(url)
+    return response.json().get("meals", [])
+
+# ----------------- Page d'Accueil Dynamique -----------------
+def display_home_page():
+    # En-tête d'introduction
+    st.markdown("<h1 style='text-align: center; color: #F39C12;'>Bienvenue dans l'application Popotterecettes 🥗</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Mettez dans la couleur et de l'équilbre dans vos recettes ⭐ !</h2>", unsafe_allow_html=True)
+
+    # Image de fond de la page d'accueil
+    st.image("https://wallpapers.com/images/featured/1pf6px6ryqfjtnyr.jpg", use_container_width=True)
+
+    # Explication de l'application
+    st.markdown("""
+        Notre objectif est de vous accompagner dans votre parcours culinaire en vous offrant des recettes variées et équilibrées, adaptées à vos goûts et préférences. Que vous soyez un passionné de cuisine, un novice ou un adepte de la cuisine saine, vous trouverez ici une multitude d'options pour ravir vos papilles tout en prenant soin de votre santé.
+        
+        🍽️ Découvrez des recettes de saison, équilibrées et pleines de saveurs.
+        Nous vous proposons des recettes aléatoires, inspirées d'ingrédients frais et sains. Vous pouvez également explorer des recettes par ingrédient ou par catégorie pour trouver des plats adaptés à vos envies du moment.
+        
+        📝 Abonnez-vous à notre Newsletter !
+        Ne manquez pas nos recettes exclusives et nos conseils en nutrition ! En vous inscrivant à notre newsletter, vous recevrez des astuces pour intégrer des produits sains dans votre alimentation et découvrir des recettes créatives pour cuisiner facilement chez vous.
+        
+        Pourquoi s'abonner ?
+        - Des recettes saines et équilibrées directement dans votre boîte mail
+        - Des conseils pratiques pour une alimentation plus saine et variée
+        - Des astuces de cuisine pour simplifier vos repas tout en prenant soin de votre santé
+        
+        👉 Inscrivez-vous maintenant et rejoignez notre communauté de gourmets soucieux de leur bien-être !
+    """)
+    st.markdown("Ici un lien pour obtenir un [Exemple de Newsletter](https://drive.google.com/file/d/1yLS6duF5sf2fBp4Y5NrfZNoP0RCGQKWH/view?usp=sharing)")
+    # Section d'inscription à la newsletter
+    with st.form(key="newsletter_form"):
+        st.subheader("📝 Inscrivez-vous à notre Newsletter !")
+        nom = st.text_input("Nom")
+        prenom = st.text_input("Prénom")
+        email = st.text_input("Email")
+        submit_button = st.form_submit_button("S'inscrire")
+        if submit_button:
+            if nom and prenom and email:
+                asyncio.run(register_user(nom, prenom, email))
+            else:
+                st.warning("⚠️ Veuillez remplir tous les champs.")
+
+    # Sections de navigation rapide
+    st.markdown("---")
+    st.subheader("🎲 Découvrez une recette aléatoire chaque jour !")
+    if st.button("Obtenir une recette du jour"):
+        meal = get_random_recipe()
+        st.session_state['random_recipe'] = meal
+
+    if 'random_recipe' in st.session_state:
+        meal = st.session_state['random_recipe']
+        st.image(meal["strMealThumb"], width=300)
+        st.write(f"### {meal['strMeal']}")
+        st.write(f"🍽 **Catégorie :** {meal['strCategory']} | 🌍 **Origine :** {meal['strArea']}")
+        st.write("📜 **Instructions :**", meal["strInstructions"])
+        st.write(f"🔗 [Voir la recette]({meal.get('strSource', 'https://www.themealdb.com/')})")
+
+    # Statistiques ou rapport intéressant
+    st.markdown("<h2 style='color: #F39C12;'>Ce que nos utilisateurs pensent</h2>", unsafe_allow_html=True)
+    st.write("Découvrez ce que d'autres pensent de nos recettes et rejoignez la communauté grandissante de gourmets!")
+
 # ----------------- Interface Utilisateur Streamlit -----------------
-
-st.title("🍽️ Application de Recettes")
-
-# 📌 Sidebar : Formulaire d'inscription
-with st.sidebar:
-    st.header("📝 Inscription à la Newsletter")
-    nom = st.text_input("Nom")
-    prenom = st.text_input("Prénom")
-    email = st.text_input("Email")
-    if st.button("S'inscrire"):
-        if nom and prenom and email:
-            asyncio.run(register_user(nom, prenom, email))
-        else:
-            st.warning("⚠️ Veuillez remplir tous les champs.")
-
 # 📌 Onglets pour les fonctionnalités
-tab1, tab2, tab3, tab4 = st.tabs(["🔎 Recherche par Ingrédient", "🎲 Recette Aléatoire", "📂 Recherche par Catégorie", "📊 Informations"])
+tab1, tab2, tab3, tab4 , tab5 = st.tabs(["🏠 Accueil", "🔎 Recherche par Ingrédient", "🎲 Recette Aléatoire", "📂 Recherche par Catégorie","📊 PowerBI"])
+
+# 🔸 Page d'Accueil
+with tab1:
+    display_home_page()
 
 # 🔎 Recherche par Ingrédient
-with tab1:
+with tab2:
     st.header("🔎 Trouver une Recette par Ingrédient")
     ingredient = st.text_input("Entrez un ingrédient (ex: Chicken)")
     if st.button("Rechercher"):
@@ -122,10 +163,14 @@ with tab1:
             st.warning("Aucune recette trouvée.")
 
 # 🎲 Recette Aléatoire
-with tab2:
+with tab3:
     st.header("🎲 Recette Aléatoire")
     if st.button("Obtenir une recette"):
         meal = get_random_recipe()
+        st.session_state['random_recipe'] = meal
+
+    if 'random_recipe' in st.session_state:
+        meal = st.session_state['random_recipe']
         st.image(meal["strMealThumb"], width=300)
         st.write(f"### {meal['strMeal']}")
         st.write(f"🍽 **Catégorie :** {meal['strCategory']} | 🌍 **Origine :** {meal['strArea']}")
@@ -133,7 +178,7 @@ with tab2:
         st.write(f"🔗 [Voir la recette]({meal.get('strSource', 'https://www.themealdb.com/')})")
 
 # 📂 Recherche par Catégorie
-with tab3:
+with tab4:
     st.header("📂 Recherche par Catégorie")
     categories = ["Beef", "Chicken", "Dessert", "Seafood", "Vegetarian"]
     category = st.selectbox("Choisissez une catégorie", categories)
@@ -149,12 +194,16 @@ with tab3:
                 st.write(f"🔗 [Voir la recette]({meal.get('strSource', 'https://www.themealdb.com/')})")
         else:
             st.warning("Aucune recette trouvée.")
+# 📊 Onglet Power BI
+with tab5:
+    st.header("📊 Dashboard Power BI")
+    st.write("Visualisez les statistiques et analyses sur les recettes.")
 
-# 📊 Power BI - Avec iframe
-with tab4:
-    st.header("📊 Rapport d'informations sur notre contenu")
-    st.markdown("""
-        <iframe width="800" height="600" src="https://app.powerbi.com/view?r=eyJrIjoiOTFkYmJmZDUtMDA3OC00MWVjLWIyNzktYWQ1ZDRiMDA4MzZjIiwidCI6IjM3NmIxOTc2LTQxZmEtNDc4OC05NWIzLWFmZGY3MDFlNzkyNyJ9" frameborder="0" allowFullScreen="true"></iframe>
+    # URL de ton rapport Power BI (remplace par ton lien)
+    power_bi_url = "https://app.powerbi.com/view?r=TON_LIEN_ICI"
+
+    # Intégration via un iframe
+    st.markdown(f"""
+        <iframe title="Power BI Report" width="100%" height="600" src="{power_bi_url}" frameborder="0" allowFullScreen="true"></iframe>
     """, unsafe_allow_html=True)
-
 
